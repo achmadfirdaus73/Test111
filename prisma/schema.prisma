@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User dengan role-based access
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String   // Hashed password
+  role           String   // 'admin', 'konsumen', 'kolektor'
+  
+  // Profile data untuk konsumen
+  namaLengkap    String?
+  jenisUsaha     String?
+  alamatRumah    String?
+  alamatUsaha    String?
+  noHape         String?
+  nomorKtp       String?
+  namaSales      String?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Produk yang bisa dibeli
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  hargaModal   Float    // Harga modal
+  dp           Float?   @default(0) // Uang muka
+  images       String   // JSON array of image URLs
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Pesanan/Order
+model Order {
+  id                    String   @id @default(cuid())
+  orderId               String   @unique // ID yang ditampilkan ke user (e.g., #12345)
+  date                  String   // Format Indonesia: "1 Januari 2024"
+  timestamp             DateTime @default(now())
+  
+  // Product info
+  productName           String
+  tenor                 Int      // Durasi dalam hari
+  installmentPrice      Float    // Harga per installment
+  paymentFrequency      String   // 'harian' atau 'mingguan'
+  
+  // Status
+  status                String   // 'Proses', 'Pengiriman', 'Terkirim', 'Lunas'
+  tanggalLunas          String?  // Estimasi tanggal lunas
+  
+  // Payment tracking (JSON array)
+  payments              String   @default("[]") // Array of {date, time, collectedBy}
+  collectionNotes       String   @default("[]") // Array of {date, time, reason, collectedBy}
+  
+  // Collector assignment
+  assignedCollector      String?
+  assignedCollectorUid   String?
+  
+  // User info
+  userId                String
+  consumerName          String
+  consumerEmail         String
+  shippingAddress       String
+  
+  // Consumer profile data
+  jenisUsaha            String
+  alamatUsaha           String
+  alamatRumah           String
+  nomorKtp              String
+  namaSales             String?
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([consumerEmail])
+  @@index([assignedCollectorUid])
+  @@index([status])
+}
+
+// Promo/Banner carousel
+model Promo {
+  id        String   @id @default(cuid())
+  type      String   // 'image' atau 'video'
+  url       String   // URL gambar/video
+  createdAt DateTime @default(now())
+}
+
+// Broadcast messages
+model Broadcast {
+  id        String   @id @default(cuid())
+  message   String
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  
+  @@index([timestamp])
+}
+
+// Holiday data (dari API hari libur)
+model Holiday {
+  id        String   @id @default(cuid())
+  date      String   @unique // Format: "YYYY-MM-DD"
+  isHoliday Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
